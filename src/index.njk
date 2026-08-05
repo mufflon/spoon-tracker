@@ -1,0 +1,68 @@
+---
+layout: layout.njk
+permalink: "/index.html"
+title: "Spoon collection"
+---
+
+<header class="top">
+  <div class="top__title">
+    <h1>Spoon collection</h1>
+    <p class="top__count"><span id="total">…</span></p>
+  </div>
+  <div class="top__actions">
+    <button type="button" id="unlock-btn" class="btn btn--ghost" aria-expanded="false">🔒 Unlock writing</button>
+    <button type="button" id="add-btn" class="btn btn--primary" disabled>+ Add spoon</button>
+  </div>
+</header>
+
+<p id="banner" class="banner" hidden></p>
+
+<!-- Unlock (write token) — a real password form so Apple Passwords / iCloud
+     Keychain can save and autofill it across devices. -->
+<form id="token-form" class="panel" hidden autocomplete="on">
+  <p class="panel__hint">Paste your write token. Safari offers to save it to Apple Passwords and syncs it to your other devices.</p>
+  <input type="text" name="username" autocomplete="username" value="spoons" hidden>
+  <label>Write token
+    <input type="password" id="token-input" name="password" autocomplete="current-password" placeholder="write token">
+  </label>
+  <div class="panel__actions">
+    <button type="submit" class="btn btn--primary">Unlock</button>
+    <button type="button" id="token-cancel" class="btn">Cancel</button>
+  </div>
+</form>
+
+<!-- Add a spoon: search a place, confirm, save. -->
+<form id="add-form" class="panel" hidden>
+  <label>Place
+    <input type="text" id="place-q" placeholder="Search a town or place…" autocomplete="off">
+  </label>
+  <ul id="place-results" class="results"></ul>
+  <div id="chosen" class="chosen" hidden>
+    <div id="chosen-label" class="chosen__label"></div>
+    <label>Note (optional)
+      <input type="text" id="spoon-note" placeholder="Where you got it, anything…">
+    </label>
+    <div class="panel__actions">
+      <button type="button" id="save-btn" class="btn btn--primary">Save spoon</button>
+      <button type="button" id="add-cancel" class="btn">Cancel</button>
+    </div>
+  </div>
+</form>
+
+<div class="toolbar">
+  <input type="search" id="search" placeholder="Search country or city…" autocomplete="off">
+  <div class="viewtoggle" role="group" aria-label="View">
+    <button type="button" class="btn btn--toggle is-on" data-view="dots">Dots</button>
+    <button type="button" class="btn btn--toggle" data-view="country">By country</button>
+  </div>
+</div>
+
+<div class="board">
+  <section class="mapwrap" aria-label="Map">
+    <div id="map" class="map" data-basemap="assets/basemap.geojson"></div>
+  </section>
+  <aside class="side">
+    <div id="countries" class="countries" hidden></div>
+    <ol id="list" class="list"></ol>
+  </aside>
+</div>

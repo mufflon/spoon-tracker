@@ -1,0 +1,18 @@
+# Cloudflare Worker config. Nothing here is a secret — safe to commit.
+# The WRITE_TOKEN is NOT here; it's set separately with:
+#   npx wrangler secret put WRITE_TOKEN
+name = "spoon-tracker"
+main = "worker/index.js"
+compatibility_date = "2025-01-01"
+
+# KV namespace for the collection. `binding` is how the Worker code refers to it
+# (env.SPOONDATABASE); `id` identifies the namespace titled "SPOONDATABASE" in the
+# dashboard. The id is an identifier, not a credential, so it's fine to commit.
+[[kv_namespaces]]
+binding = "SPOONDATABASE"
+id = "3cc60571bea544ffa7a108770fc025f2"
+
+[vars]
+# Browser origins allowed to call the API (CORS). Not secret. Add your real
+# site URL(s) here; localhost is for the dev front-end.
+ALLOWED_ORIGINS = "http://localhost:8080,https://mufflon.github.io"

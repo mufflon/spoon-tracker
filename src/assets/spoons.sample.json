@@ -1,0 +1,7 @@
+[
+  { "id": "sample-1", "name": "Kraków", "country": "PL", "countryName": "Poland", "city": "Kraków", "lat": 50.0614, "lng": 19.9372, "note": "Cloth Hall stall.", "addedAt": "2019-06-01T10:00:00Z" },
+  { "id": "sample-2", "name": "Rostock", "country": "DE", "countryName": "Germany", "city": "Rostock", "lat": 54.0924, "lng": 12.0991, "note": "Ferry terminal shop.", "addedAt": "2021-08-14T10:00:00Z" },
+  { "id": "sample-3", "name": "Wieliczka", "country": "PL", "countryName": "Poland", "city": "Wieliczka", "lat": 49.9874, "lng": 20.0644, "note": "Salt mine gift shop.", "addedAt": "2019-06-02T10:00:00Z" },
+  { "id": "sample-4", "name": "Bratislava", "country": "SK", "countryName": "Slovakia", "city": "Bratislava", "lat": 48.1486, "lng": 17.1077, "note": "Old town.", "addedAt": "2022-05-20T10:00:00Z" },
+  { "id": "sample-5", "name": "Budapest", "country": "HU", "countryName": "Hungary", "city": "Budapest", "lat": 47.4979, "lng": 19.0402, "note": "Central Market Hall.", "addedAt": "2023-07-01T10:00:00Z" }
+]

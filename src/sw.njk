@@ -1,0 +1,54 @@
+---
+permalink: "sw.js"
+eleventyExcludeFromCollections: true
+---
+// Precaches the app shell so the site installs to the home screen and opens
+// offline for VIEWING and SEARCH (adding needs a connection). Only same-origin
+// GETs are cached; the Worker API, Nominatim and OSM tiles always go to the
+// network — offline, the app falls back to the last-synced spoon list (kept in
+// localStorage) shown on the bundled basemap. Cache name carries the build time,
+// so each deploy replaces the old cache — no stale app.
+const CACHE = "spoons-{{ build.time }}";
+const ASSETS = [
+  "./",
+  "index.html",
+  "assets/style.css",
+  "assets/app.js",
+  "assets/basemap.geojson",
+  "assets/spoons.sample.json",
+  "assets/leaflet/leaflet.js",
+  "assets/leaflet/leaflet.css",
+  "assets/leaflet/images/layers.png",
+  "assets/leaflet/images/layers-2x.png",
+  "assets/leaflet/images/marker-icon.png",
+  "assets/leaflet/images/marker-icon-2x.png",
+  "assets/leaflet/images/marker-shadow.png",
+  "manifest.webmanifest",
+  "assets/icon-180.png",
+  "assets/icon-192.png",
+  "assets/icon-512.png"
+];
+
+self.addEventListener("install", (e) => {
+  e.waitUntil(
+    caches.open(CACHE).then((c) => Promise.allSettled(ASSETS.map((u) => c.add(u)))).then(() => self.skipWaiting())
+  );
+});
+self.addEventListener("activate", (e) => {
+  e.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+self.addEventListener("fetch", (e) => {
+  const req = e.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return; // Worker API / tiles / Nominatim -> network
+  e.respondWith(
+    caches.match(req).then((hit) =>
+      hit || fetch(req).catch(() => (req.mode === "navigate" ? caches.match("index.html") : Response.error()))
+    )
+  );
+});
