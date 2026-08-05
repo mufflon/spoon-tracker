@@ -92,8 +92,9 @@ The one rule: **the repo is public, so nothing secret lives in it.**
   in the site. The app shows a small sign-in form (a username field plus
   `<input type="password" autocomplete="current-password">`); Safari offers to save the
   token to the Keychain and syncs it across my Apple devices, autofilling it thereafter.
-  The app holds it **in memory only — nothing persisted to `localStorage`**. Only devices
-  with the token can write; the public site ships without it.
+  The app keeps it in **session storage** (cleared when the tab/app closes), never in
+  `localStorage`; Apple Passwords is the durable, synced copy. Only devices with the token
+  can write; the public site ships without it.
   - *Future upgrade:* replace the shared token with a **passkey/WebAuthn** — the
     credential lives in iCloud Keychain, nothing is ever pasted, and writes are authorised
     by a Face/Touch ID signature that the Worker verifies before issuing a short-lived
@@ -105,7 +106,8 @@ The one rule: **the repo is public, so nothing secret lives in it.**
 
 ## Data model
 
-One record per spoon, in the `spoons` array:
+One record per spoon. Each is its own KV key (`spoon:<id>`); `GET /spoons` returns them
+as a JSON array:
 
 ```jsonc
 {
@@ -130,7 +132,7 @@ One record per spoon, in the `spoons` array:
 
 **Adding a spoon (online):** search a place by name → results from OSM **Nominatim** (or
 Photon), keyless and free, rate-limited so debounce and attribute → pick one → the result
-gives lat/lng, city and country (ISO) → confirm on a small map → save (POST with token).
+gives lat/lng, city and country (ISO) → confirm the chosen place → save (POST with token).
 
 **Offline:** the last successfully-fetched list is cached locally. With no connection I
 can still: search/filter my collection by country and city, see the counts, the dots, and
@@ -140,15 +142,24 @@ the per-country views, all on the bundled offline basemap. Writing is disabled o
 **Views required:**
 1. **Total count** — how many spoons in all.
 2. **Dots map** — one marker per spoon at its lat/lng.
-3. **Per-country overview** — one numeric marker per country showing the count of spoons
-   from it, placed at the country's centroid (derive centroids/bounds from the bundled
-   Natural Earth geojson; no extra data source).
-4. **Per-country drill-down** — pick a country → its spoon count and a map zoomed to just
-   that country (fit to its polygon bounds from the geojson) showing that country's dots.
+3. **Per-country overview** — a "By country" toggle: one numeric count marker per country
+   (placed at the mean position of that country's spoons) plus a chip list of the counts.
+4. **Per-country drill-down** — click a country (chip or count marker) → filter to it,
+   switch to dots, and fit the map to that country's spoons.
 5. **Search** by country/city that also answers "do I already have one from here?".
 
 Keep the same restraint as `roadtrip26`: high contrast, big tap targets, no console
 errors, works from 360 px up, `prefers-reduced-motion` respected.
+
+## Running it
+
+```bash
+npm install
+npm start            # front-end at http://localhost:8080/  (append ?demo=1 for sample data)
+npm run worker:dev   # run the Worker locally
+npm run worker:deploy
+npm run backup       # snapshot the live collection to data/spoons.json (then commit)
+```
 
 ## Backup to git ("you never know if a service goes down")
 
@@ -166,9 +177,10 @@ The KV store is the live source of truth; git is the durable backup.
 
 - **Worker:** `wrangler deploy` (config in `wrangler.toml`; `WRITE_TOKEN` via
   `wrangler secret put`). One KV namespace.
-- **Front-end:** same options as `roadtrip26` — GitHub Pages via Actions and/or a GHCR
-  nginx image. The site needs the Worker's public URL at build time (a non-secret config
-  value / `PUBLIC` env, safe to commit).
+- **Front-end:** GitHub Pages via Actions (`.github/workflows/deploy.yml`; Settings →
+  Pages → Source → GitHub Actions). The Worker URL is baked in from `_data/config.js`
+  (override with the `SPOON_API` env at build) — non-secret, safe to commit. A GHCR nginx
+  image like roadtrip26's could be added later but isn't set up.
 - **Paths:** the front-end uses relative asset/link paths (not an Eleventy `pathPrefix`),
   so it works unchanged at the Pages subpath `/<repo>/` and at a domain root.
 
@@ -179,15 +191,18 @@ plan if wanted), no offline *writing*, no soft-delete / de-accession history (de
 hard delete), no self-hosted database, no analytics. If any seems necessary, say so
 rather than building it.
 
-## TODO (build order) — items 1–6 are now BUILT; the tail remains
+## Status (built & deployed, 2026-08-05)
 
-1. Scaffold the front-end from the `roadtrip26` skeleton (Eleventy, local Leaflet, bundled
-   basemap, PWA), minus the road-trip data.
-2. The Worker: `GET /spoons` (open) and token-gated `POST` / `PUT /:id` / `DELETE /:id`,
-   with one key per spoon (`spoon:<id>`). `wrangler.toml` + `WRITE_TOKEN` secret.
-3. Add flow: Nominatim search → confirm → save; token entry stored per-device.
-4. The four map views + search, reading from the locally-cached list.
-5. Offline cache + service worker (browse/search/counts offline; writes online only).
-6. `npm run backup` / `npm run restore` and the `data/spoons.json` convention.
-7. Deploy Worker + front-end; verify write-protection (a tokenless write is rejected) and
-   the offline read path.
+Live and verified:
+- **Worker:** `https://spoon-tracker.mufflon.workers.dev` — one key per spoon; open `GET`,
+  token-gated `POST` / `PUT /:id` / `DELETE /:id`. Tokenless writes are rejected (401).
+- **Front-end:** `https://mufflon.github.io/spoon-tracker/` — Nominatim add flow, the map
+  views + search, offline view/search (service worker + cached list), installable PWA.
+  CORS from the Pages origin works, no console errors.
+- **Backup:** `npm run backup` → `data/spoons.json`.
+
+Remaining / optional (not built):
+- `npm run restore` + a token-gated bulk-import endpoint on the Worker (for full recovery).
+- A GHCR container image, as roadtrip26 has.
+- Possible refinement: a true country-outline drill-down view (currently drill = filter +
+  fit to that country's spoons).
